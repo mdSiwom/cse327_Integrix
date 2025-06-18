@@ -1,0 +1,412 @@
+1. Image-only (Vision) Models
+
+    MobileNetV2 / MobileNetV3
+
+        What it is: A family of lightweight convolutional neural nets optimized for mobile/embedded.
+
+        Why use it: Small memory footprint (4–14 MB), fast inference on Android’s NNAPI or GPU delegate.
+
+        How to get it:
+
+            TensorFlow Hub / TFLite Model Zoo provides pre-converted .tflite files.
+
+            You can swap in MobileNetV2 or MobileNetV3 (e.g., “MobileNetV3-Small”) depending on your accuracy vs. size tradeoff.
+
+        Typical tasks: Image classification, feature extraction (run an image through MobileNet, grab the penultimate embedding for downstream fusion).
+
+    EfficientNet-Lite (B0, B1, B2, etc.)
+
+        What it is: A family of CNNs that achieve better accuracy/size trade-offs than MobileNet.
+
+        Why use it: Offers slightly higher accuracy at similar or slightly larger size. EfficientNet-Lite models are already in .tflite form for on-device inference.
+
+        Where to find it: TFLite Model Zoo → “EfficientNet Lite” variants (for example, EfficientNet-Lite0 is ~5 MB).
+
+    MediaPipe Face / Pose / Object Detection
+
+        What it is: Google’s MediaPipe offers on-device sub-pipelines (e.g. face detection, pose estimation, object detection).
+
+        Why use it: Pre-written, highly optimized C++/Java/Kotlin graph. If you need something like “detect face landmarks → crop → classify” as part of your workflow, MediaPipe can be a great drop-in.
+
+        How to integrate: Add MediaPipe Android AARs to your Gradle project and use their “JavaQuickStart” or Kotlin API.
+
+    When to choose MobileNet/EfficientNet vs. MediaPipe?
+
+        If you simply need a generic feature extractor or classification head, go MobileNet/EfficientNet.
+
+        If you need structured outputs (e.g., bounding boxes, keypoints) as part of a pipeline, MediaPipe’s object/pose modules are extremely lightweight and fast on Android.
+
+2. Text / NLP Models
+
+    MobileBERT
+
+        What it is: A compressed (mobile-optimized) variant of BERT.
+
+        Size: ~96 MB for the full float32 BERT — but MobileBERT is ~100 MB in raw TensorFlow form. When converted + quantized to .tflite (especially full‐integer quantization), it can go down to ~10–20 MB.
+
+        Use cases: Text classification, embedding extraction, Q&A (span prediction).
+
+    DistilBERT
+
+        What it is: A distilled, smaller version of BERT (roughly half the parameters).
+
+        Size: Base DistilBERT (110 M params) can be quantized down to ~30–40 MB TFLite.
+
+        Use cases: Sentiment analysis, intent classification, embeddings.
+
+    ALBERT Tiny / ALBERT Small
+
+        What it is: “A Lite BERT” with factorized embeddings and cross-layer parameter sharing.
+
+        Size: ALBERT Tiny is ~4 M params; in TFLite (after quantization) it can be < 10 MB.
+
+        Use cases: Anything where you need a small text encoder—embedding, intent recognition.
+
+    TensorFlow Lite’s “Text Classification” examples
+
+        What it is: TF Lite provides sample .tflite models and code for text classification (e.g., on movie reviews).
+
+        Why it helps: You can use the sample architecture (tokenizer + embedding + LSTM/Dense) and retrain on your data, then convert to TFLite.
+
+    Tip: If your “workflows” need both text and image features, you can run MobileNet/EfficientNet on the image and run MobileBERT or DistilBERT on the text snippet, then concatenate embeddings in a small Dense‐fusion head (inside your Android app).
+
+3. Audio / Speech Models
+
+    YAMNet
+
+        What it is: A TFLite model (based on MobileNetV1 backbone) that classifies environmental audio into 521 classes (e.g., siren, speech).
+
+        Size: ~3 MB in TFLite format (after quantization).
+
+        Use cases: “is there speech vs. music vs. dog barking?” or just as a sound-event detector.
+
+    VGGish
+
+        What it is: A VGG-style conv net for audio classification (on top of log mel spectrograms).
+
+        Size: ~25 MB unquantized; can be quantized to ~3–5 MB TFLite.
+
+        Use cases: Audio embeddings for downstream tasks (e.g., emotion detection, simple keyword spotting).
+
+    TFLite “Speech Commands” Model
+
+        What it is: A tiny CNN specifically trained to recognize a small set of spoken words (e.g., “yes/no” or “stop/go”).
+
+        Size: < 2 MB.
+
+        Use cases: If your workflow needs on-device keyword spotting (e.g., “Hey app, do X”).
+
+    TensorFlow Lite “ASR (Q&A)” example
+
+        What it is: TF Lite provides a small “on-device ASR” demo; not production-grade, but good for proof-of-concept.
+
+        Why consider: If you need actual speech-to-text, it shows how to pipeline mic input → TFLite inference → decode.
+
+    Key point: Are you doing simple keyword spotting or full ASR?
+
+        Keyword spotting: “Speech Commands” TFLite model (works in ~10 ms/inference).
+
+        Full ASR: On-device ASR still tends to be > 10 MB and slower; often you’ll either remote-call a small server or use a small local RNN-Transducer (e.g., DeepSpeech Lite), but these often exceed 50 MB. YAMNet is cheaper if you only need audio‐event classification.
+
+4. True Multimodal (Vision + Language) Models
+
+    CLIP (Contrastive Language–Image Pretraining)
+
+        What it is: A model trained by OpenAI to embed images and text in the same space.
+
+        Standard size: CLIP (ViT-B/32) is ~420 MB in raw PyTorch.
+
+        Mobile variants:
+
+            MobileCLIP (a distilled/quantized variant) can be as small as ~50–80 MB in ONNX or TFLite form (with 8-bit quantization).
+
+            TinyCLIP (research code) is < 10 MB (quantized) but lower accuracy.
+
+        How to use on-device:
+
+            Grab a distilled MobileCLIP from Hugging Face (search “MobileCLIP TFLite”).
+
+            Convert to TFLite with full-integer quantization.
+
+            You’ll get two separate sub-models:
+
+                Image encoder (CNN or mini-ViT)
+
+                Text encoder (small transformer)
+
+            In your Android code, run them separately and compute cosine similarity for retrieval or classification.
+
+    VL Universal (Vision–Language Universal Embeddings)
+
+        What it is: A smaller Transformer encoder trained on image–text pairs, producing a unified embedding.
+
+        Availability: Some research groups publish < 100 MB distilled versions. You’ll need to convert to TFLite yourself (there’s usually a PyTorch → ONNX → TFLite pipeline).
+
+        Use cases: Visual Question Answering (VQA), image captioning, text-based image retrieval.
+
+    TFLite “On-Device Visual Question Answering” Sample
+
+        What it is: An official TF documentation page shows how to take a pre-trained VQA model (often based on Bottom-Up Top-Down or ViLT) and convert to TFLite.
+
+        Size: After heavy quantization, ~20–30 MB.
+
+        Pipeline:
+
+            User snaps a photo (input image).
+
+            User types “What’s on the table?” (input text).
+
+            The Android app sends both to the TFLite interpreter (two separate models—or a single fused TFLite graph).
+
+            The output is “plate” or “bowl.”
+
+    Caveat: VQA models tend to be heavier. You’ll often end up with ~30 MB if you chop off precision. In practice, really tiny Android-suitable VQA often uses a pipelined approach: MobileNet for object proposals + a tiny LSTM for the question + a small attention head.
+
+5. Putting It All Together: Sample “Workflow” Patterns
+
+Below are three common multimodal workflow templates. In each case, you load one or more lightweight models on Android (as .tflite), run them in sequence, fuse their outputs, and then post-process.
+A. Image + Text Classification
+
+    Trigger:
+
+        User takes a picture (camera preview → bitmap).
+
+        User enters a short text snippet (EditText).
+
+    On-Device Models:
+
+        Image encoder: MobileNetV3-Small (×1) → 1,280-D embedding.
+
+        Text encoder: ALBERT-Tiny (×1) → 128-D embedding.
+
+    Fusion Head (small 2-layer MLP):
+
+        Concatenate [1,280-D, 128-D] → 1,408-D → Dense(512) → ReLU → Dense(#classes) → Softmax.
+
+    Output: Show the predicted label on screen (e.g., “label: smiling face in a park”).
+
+B. Audio + Text (Voice-Command + Context)
+
+    Trigger:
+
+        Microphone records a 1–2 s clip.
+
+        User also provides a text context or selects a mode (“set alarm,” “send message”).
+
+    On-Device Models:
+
+        Keyword spotting: TFLite “Speech Commands” model → returns a banana, yes/no, stop/go, or “unknown.”
+
+        Text encoder: DistilBERT → 256-D embedding of user-typed context.
+
+    Logic:
+
+        If speech model says “stop,” run code to stop current service.
+
+        Else, fuse audio embedding (e.g., one-hot of recognized command) with text embedding → pass through a tiny classifier (∼2 MB TFLite).
+
+    Output:
+
+        Perform the requested action (e.g., trigger a local notification, schedule an alarm).
+
+C. Image + Audio (Lip-Reading + Background-Noise Classification)
+
+    Trigger:
+
+        Camera records a person’s lips (cropped face).
+
+        Microphone captures background audio.
+
+    On-Device Models:
+
+        Video/Lip encoder: A tiny CNN (e.g., 3D MobileNet) for lip movement → produces 128-D embedding.
+
+        Audio event detector: YAMNet → 19-D “speech” confidence + 521 class probabilities (collapsed to “speech” vs. “noise”).
+
+    Logic:
+
+        If YAMNet indicates “speech” (confidence > 0.6), run the lip encoder to predict the spoken word from lip movements (offline lip-reading).
+
+        Else, ignore (maybe classify ambient noise and display an icon for “noisy environment”).
+
+    Output:
+
+        If speech detected, show the predicted lip-read text.
+
+        If only noise, show a “noise detected” icon.
+
+6. True “Off-the-Shelf” Multimodal Models (All-in-One)
+
+If you really want a single downloadable model that “ingests image + text + audio” at once, here are a few community/paper codebases you can look into, but note that you’ll almost certainly need to convert and quantize them yourself:
+
+    ViLT (Vision and Language Transformer)
+
+        Paper: Kim et al., “ViLT: Vision-and-Language Transformer Without Convolution or Region Supervision” (2021).
+
+        Why consider: It’s far smaller than full VisualBERT/Uniter because it embeds raw pixels directly (no heavy ResNet).
+
+        Raw size: ~418 MB PyTorch; can be distilled to ~80 MB ONNX, then quantized to ~20 MB TFLite.
+
+        Use case: Image captioning, VQA, image-text retrieval.
+
+    LXMERT Tiny / Distilled
+
+        What it is: A smaller version of LXMERT (a cross-modal Transformer).
+
+        Size: Distilled tiny variant ~150 MB PyTorch; with heavy quantization you might get ~30 MB TFLite.
+
+        Availability: Look for “LXMERT TFLite” repos on GitHub. You will need to strip out unnecessary heads.
+
+    UnifiedIO (Small)
+
+        What it is: A general-purpose text+image foundation model from Google Research (bridging many modalities).
+
+        Raw: ~689 M parameters (too big).
+
+        Tiny version: Google’s “U-UniLM” Tiny is ~307 M; not realistically on-device without cloud.
+
+    Bottom line: Real “all in one” multimodal Transformers still tend to be > 50 MB after quantization. Unless you have a very generous APK size budget, you’ll often be better off composing separate smaller sub-models.
+
+7. Where to Find These Models
+
+    TensorFlow Lite Model Zoo
+
+        Browse: https://www.tensorflow.org/lite/models
+
+        You’ll find “Image Classification,” “Object Detection,” “Text Classification,” “Speech Commands,” and a handful of VQA examples.
+
+        Each model page has a direct .tflite download + sample Android code.
+
+    Hugging Face Model Hub
+
+        Filter for “TFLite” or “ONNX” tags.
+
+        Example queries:
+
+            “MobileBERT TFLite”
+
+            “DistilBERT TFLite”
+
+            “MobileCLIP TFLite”
+
+    GitHub Repositories
+
+        Search “Android TFLite multimodal” or “TinyCLIP Android.”
+
+        Many community projects detail how to convert a Hugging Face CLIP checkpoint → ONNX → TFLite.
+
+    On-Device Examples in TF Official Guides
+
+        See “On-Device Visual Question Answering” (search “tfhub on device vqa”)
+
+        See “Text Classification on-device” (search “tf lite sentiment analysis Android”).
+
+8. Putting It All into Your Android App
+
+    Choose your modalities (e.g., image+text).
+
+    Pick per-modality sub-models:
+
+        Image: MobileNetV3-Small .tflite
+
+        Text: ALBERT Tiny .tflite
+
+    Convert/Quantize (if not already):
+
+        If you download a TF2 model checkpoint from TF Hub, run a Python script to convert → TFLite and then apply 8-bit quantization.
+
+        If you grab a PyTorch model (e.g., TinyCLIP), convert via TorchScript → ONNX → TFLite.
+
+        Use TensorFlow’s tf.lite.TFLiteConverter with optimizations=[tf.lite.Optimize.DEFAULT] for full integer quant.
+
+    Bundle them in your Android APK (e.g., put .tflite files in app/src/main/assets/).
+
+    Write a small “workflow engine”:
+
+        Create a JSON (or SQLite) table listing each workflow:
+
+        {
+          "workflow_id": "img_text_classifier",
+          "inputs": ["image", "text"],
+          "image_model": "mobilenet_v3_small.tflite",
+          "text_model": "albert_tiny.tflite",
+          "fusion_head_model": "fusion_head.tflite"
+        }
+
+        At runtime, load the relevant TFLite interpreters dynamically (you can keep them in memory or load/unload per workflow).
+
+    Design the UI so the user can select “Workflow A” vs. “Workflow B” (maybe with a Spinner or tab bar).
+
+    Execute:
+
+        On button click, run the chosen workflow’s pipeline:
+
+            Preprocess inputs (resize/crop image, tokenize text).
+
+            TFLite inference on image → get an embedding.
+
+            TFLite inference on text → get an embedding.
+
+            TFLite inference on “fusion head” (if you created a tiny fusion model).
+
+            Post-process and display result.
+
+9. Example “Starter” Model Combination
+
+Below is a minimal setup for Workflow: Image + Text Classification:
+
+    Image Submodel:
+
+        File: mobilenet_v3_small.tflite (~4 MB)
+
+        Output: 1,280-dim embedding.
+
+    Text Submodel:
+
+        File: albert_tiny_128.tflite (~8 MB)
+
+        Output: 128-dim embedding (sentence vector).
+
+    Fusion Head (you must train this yourself on your specific dataset—see below):
+
+        Architecture:
+
+        Input (1,408 dims) → Dense(512) → ReLU → Dense(#classes) → Softmax
+
+        Training:
+
+            On your desktop (or in Colab), freeze MobileNet+ALBERT checkpoints; extract embeddings for each training example.
+
+            Train the 2-layer MLP on top of [concatenated embeddings].
+
+            Convert the MLP to TFLite (with quantization).
+
+        Result: fusion_head.tflite (~2 MB after quantization).
+
+    Total Size (assets): ~4 MB + 8 MB + 2 MB = 14 MB. All three run locally (no network needed).
+
+    Note: If you only need image classification or only text classification at any one time, you can keep just the relevant submodel loaded. That saves memory. But for true “multimodal” you’ll load both.
+
+10. Summary of Recommended “Existing Models”
+Modality	Model Name	Approx. Size (Quantized)	Task / Notes
+Image	MobileNetV2 / V3-Small	~4–6 MB	Classification / feature extractor
+	EfficientNet-Lite0	~5 MB	Slightly better accuracy
+	MediaPipe Object/Face/Pose	~1–5 MB per graph	Prebuilt graphs for detection/keypoints
+Text	ALBERT Tiny (TFLite)	~8 MB	Sentence embeddings, intent classification
+	MobileBERT (Quantized TFLite)	~10–20 MB	Q&A, embeddings
+	DistilBERT (Quantized TFLite)	~30–40 MB	General text tasks
+Audio	YAMNet (TFLite)	~3 MB	Environmental sound classification
+	VGGish (Quantized TFLite)	~3–5 MB	Audio embeddings
+	Speech Commands (TFLite)	~2 MB	Keyword spotting (“yes/no,” etc.)
+Vision + Language	MobileCLIP (Quantized TFLite)	~50–80 MB (8-bit)	Joint image/text embeddings (retrieval, VQA)
+	TinyCLIP	~8–12 MB (quantized)	Lower-accuracy CLIP for on-device retrieval
+	ViLT (Distilled → TFLite)	~20–30 MB	VQA / Image captioning (if you can retrain)
+	ALBEF Tiny (Distilled)	~25–35 MB	Image-text fusion (Image Captioning, VQA)
+
+Most lightweight “purely multimodal” pick:
+
+    TinyCLIP (∼8–12 MB quantized).
+
+    If you need a simple “image-text similarity” or “zero-shot classification” workflow, TinyCLIP is your best bet on Android.
+
+    For VQA or image captioning, look at Distilled ViLT (~20 MB).

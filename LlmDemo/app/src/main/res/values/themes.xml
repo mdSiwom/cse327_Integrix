@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.LlmDemo" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <!-- Consider updating these colors to align with Material 3 conventions
+             if you have specific brand colors for Material 3.
+             For Material 3, colorPrimary is often the main interactive color. -->
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/purple_700</item> <!-- Example M3 mapping -->
+        <item name="colorOnPrimaryContainer">@color/white</item>   <!-- Example M3 mapping -->
+
+        <!-- Secondary brand color. -->
+        <!-- For Material 3, secondary is often used for less prominent components
+             or as an accent. -->
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorSecondaryContainer">@color/teal_700</item> <!-- Example M3 mapping -->
+        <item name="colorOnSecondaryContainer">@color/black</item>    <!-- Example M3 mapping -->
+
+        <!-- Tertiary brand color (new in Material 3, can be useful for accents) -->
+        <!-- <item name="colorTertiary">@color/your_tertiary_color</item> -->
+        <!-- <item name="colorOnTertiary">@color/your_on_tertiary_color</item> -->
+        <!-- <item name="colorTertiaryContainer">@color/your_tertiary_container_color</item> -->
+        <!-- <item name="colorOnTertiaryContainer">@color/your_on_tertiary_container_color</item> -->
+
+        <!-- Error color -->
+        <!-- <item name="colorError">@color/your_error_color</item> -->
+        <!-- <item name="colorOnError">@color/your_on_error_color</item> -->
+        <!-- <item name="colorErrorContainer">@color/your_error_container_color</item> -->
+        <!-- <item name="colorOnErrorContainer">@color/your_on_error_container_color</item> -->
+
+        <!-- Background colors -->
+        <!-- <item name="android:colorBackground">@color/your_background_color</item> -->
+        <!-- <item name="colorOnBackground">@color/your_on_background_color</item> -->
+        <!-- <item name="colorSurface">@color/your_surface_color</item> -->
+        <!-- <item name="colorOnSurface">@color/your_on_surface_color</item> -->
+        <!-- <item name="colorSurfaceVariant">@color/your_surface_variant_color</item> -->
+        <!-- <item name="colorOnSurfaceVariant">@color/your_on_surface_variant_color</item> -->
+        <!-- <item name="colorOutline">@color/your_outline_color</item> -->
+
+        <!-- Status bar color. -->
+        <!-- For Material 3, this is often set to colorSurface or transparent
+             and window insets are handled.
+             Using ?attr/colorSurface might be a better default with M3 for day/night consistency.
+             If you want it to be the same as the primary container:
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryContainer</item>
+             Or transparent, with edge-to-edge enabled:
+        <item name="android:statusBarColor" tools:targetApi="l">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item> comment out for dark theme -->
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item> <!-- Kept your original for now -->
+
+
+        <!-- Customize other theme attributes here. -->
+        <!-- For example, typography, shape appearances, etc. -->
+        <!-- <item name="textAppearanceHeadline1">@style/TextAppearance.MyTheme.Headline1</item> -->
+
+        <!-- To enable edge-to-edge content (recommended with Material 3)
+             You might need to handle insets in your layouts/code.
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
+        <item name="android:enforceStatusBarContrast" tools:targetApi="q">false</item>
+        -->
+    </style>
+
+    <!-- Optional: If you want a specific theme for the night mode,
+         you can create a themes.xml in res/values-night/ and define Theme.LlmDemo there too,
+         possibly with different color mappings.
+         If Theme.Material3.DayNight.NoActionBar is used as parent, it automatically
+         handles light/dark variations based on system settings if your @color resources
+         are defined correctly (e.g. separate colors in res/values/colors.xml and res/values-night/colors.xml)
+    -->
+
+</resources>

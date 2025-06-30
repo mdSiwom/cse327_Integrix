@@ -35,15 +35,6 @@ class MainActivity : AppCompatActivity() {
                 val result = llm.generateResponse(prompt)
                 resultTextView.text = result
 
-                // 2. Hook up the button to run inference
-                runButton.setOnClickListener {
-                    val prompt = promptEditText.text.toString().trim()
-                    if (prompt.isNotEmpty()) {
-                        // Synchronous call (blocks UI thread briefly on small models)
-                        val result = llm.generateResponse(prompt)
-                        resultTextView.text = result
-                    }
-                }
             }
         }
     }}

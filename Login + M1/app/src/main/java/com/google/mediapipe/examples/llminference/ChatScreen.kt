@@ -53,31 +53,23 @@ internal fun ChatRoute(
     onClose: () -> Unit
 ) {
     val context = LocalContext.current.applicationContext
-    val chatViewModel: ChatViewModel = viewModel(factory = ChatViewModel.getFactory(context))
+    val chatViewModel: ChatViewModel =
+        viewModel(factory = ChatViewModel.getFactory(context))
 
-    // Reset InferenceModel when entering ChatScreen
+    // Reset model/session when we enter
     LaunchedEffect(Unit) {
-        val inferenceModel = InferenceModel.getInstance(context)
-        chatViewModel.resetInferenceModel(inferenceModel)
+        chatViewModel.resetInferenceModel(InferenceModel.getInstance(context))
     }
 
     val uiState by chatViewModel.uiState.collectAsStateWithLifecycle()
-    val textInputEnabled by chatViewModel.isTextInputEnabled.collectAsStateWithLifecycle()
+    val textEnabled by chatViewModel.isTextInputEnabled.collectAsStateWithLifecycle()
+
     ChatScreen(
-        context,
-        uiState,
-        textInputEnabled,
-        remainingTokens = chatViewModel.tokensRemaining,
-        resetTokenCount = {
-            chatViewModel.recomputeSizeInTokens("")
-        },
-        onSendMessage = { message ->
-            chatViewModel.sendMessage(message)
-        },
-        onChangedMessage = { message ->
-            chatViewModel.recomputeSizeInTokens(message)
-        },
-        onClose = onClose
+        context           = context,
+        uiState           = uiState,
+        textInputEnabled  = textEnabled,
+        onSendMessage     = { chatViewModel.sendMessage(it) },
+        onClose           = onClose
     )
 }
 
@@ -86,21 +78,16 @@ fun ChatScreen(
     context: Context,
     uiState: UiState,
     textInputEnabled: Boolean,
-    remainingTokens: StateFlow<Int>,
-    resetTokenCount: () -> Unit,
     onSendMessage: (String) -> Unit,
-    onChangedMessage: (String) -> Unit,
     onClose: () -> Unit
 ) {
     var userMessage by rememberSaveable { mutableStateOf("") }
-    val tokens by remainingTokens.collectAsState(initial = -1)
 
     Column(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Bottom
     ) {
-        // Top bar with close button
+        // Top bar: model name + Clear & Close
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -112,28 +99,20 @@ fun ChatScreen(
                 text = InferenceModel.model.toString(),
                 style = MaterialTheme.typography.titleSmall
             )
-            Text(
-                text = if (tokens >= 0) "$tokens ${stringResource(R.string.tokens_remaining)}" else "",
-                style = MaterialTheme.typography.titleSmall
-            )
-            // Wrap the buttons in another Row to keep them together
             Row {
                 IconButton(
                     onClick = {
                         InferenceModel.getInstance(context).resetSession()
                         uiState.clearMessages()
-                        resetTokenCount()
                     },
                     enabled = textInputEnabled
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = "Clear Chat")
                 }
-
                 IconButton(
                     onClick = {
                         InferenceModel.getInstance(context).close()
                         uiState.clearMessages()
-                        resetTokenCount()
                         onClose()
                     },
                     enabled = textInputEnabled
@@ -143,26 +122,7 @@ fun ChatScreen(
             }
         }
 
-        if (tokens == 0) {
-            // Show warning label that context is full
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.LightGray)
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.context_full_message),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.Red,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-
+        // Chat messages list
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
@@ -175,37 +135,26 @@ fun ChatScreen(
             }
         }
 
+        // Input row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp, horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
-            Column { }
-
             Spacer(modifier = Modifier.width(8.dp))
 
             TextField(
                 value = userMessage,
-                onValueChange = { userMessage = it
-                    // Only recompute on first word or when we get a new word
-                    if (!userMessage.contains(" ") || userMessage.trim() != userMessage)  {
-                        onChangedMessage(userMessage)
-                    }
-                },
+                onValueChange = { userMessage = it },
                 keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
+                    capitalization = KeyboardCapitalization.Sentences
                 ),
-                label = {
-                    Text(stringResource(R.string.chat_label))
-                },
+                label = { Text(stringResource(R.string.chat_label)) },
                 modifier = Modifier
                     .weight(0.85f)
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused) {
-                            onChangedMessage(userMessage)
-                        }
+                    .onFocusChanged { focus ->
+                        /* no tokens tracking now */
                     },
                 enabled = textInputEnabled
             )
@@ -219,15 +168,12 @@ fun ChatScreen(
                 },
                 modifier = Modifier
                     .padding(start = 16.dp)
-                    .align(Alignment.CenterVertically)
-                    .fillMaxWidth()
                     .weight(0.15f),
-                enabled = textInputEnabled && tokens > 0
+                enabled = textInputEnabled
             ) {
                 Icon(
                     Icons.AutoMirrored.Default.Send,
-                    contentDescription = stringResource(R.string.action_send),
-                    modifier = Modifier
+                    contentDescription = stringResource(R.string.action_send)
                 )
             }
         }

@@ -16,9 +16,9 @@ enum class Model(
     val topK: Int,
     val topP: Float,
 ) {
-    GEMMA3_1B_IT_CPU(
-        path = "/data/local/tmp/Gemma3-1B-IT_multi-prefill-seq_q8_ekv2048.task",
-        url = "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/Gemma3-1B-IT_multi-prefill-seq_q8_ekv2048.task",
+    GEMMA3_1B_IT(
+        path = "/data/local/tmp/gemma3-1b-it-int4.task",
+        url = "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task",
         licenseUrl = "https://huggingface.co/litert-community/Gemma3-1B-IT",
         needsAuth = true,
         preferredBackend = Backend.CPU,
@@ -27,9 +27,9 @@ enum class Model(
         topK = 64,
         topP = 0.95f
     ),
-    GEMMA_3_1B_IT_GPU(
-        path = "/data/local/tmp/Gemma3-1B-IT_multi-prefill-seq_q8_ekv2048.task",
-        url = "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/Gemma3-1B-IT_multi-prefill-seq_q8_ekv2048.task",
+    GEMMA_3N_E2B_IT(
+        path = "/data/local/tmp/gemma-3n-E2B-it-int4.task",
+        url = "https://huggingface.co/google/gemma-3n-E2B-it-litert-preview/resolve/main/gemma-3n-E2B-it-int4.task",
         licenseUrl = "https://huggingface.co/litert-community/Gemma3-1B-IT",
         needsAuth = true,
         preferredBackend = Backend.GPU,
@@ -38,8 +38,8 @@ enum class Model(
         topK = 64,
         topP = 0.95f
     ),
-    GEMMA_2_2B_IT_CPU(
-        path = "/data/local/tmp/Gemma2-2B-IT_multi-prefill-seq_q8_ekv1280.task",
+    GEMMA_3_1B_IT_GPU(
+        path = "/data/local/tmp/gemma-3n-E2B-it-int4.task",
         url = "https://huggingface.co/litert-community/Gemma2-2B-IT/resolve/main/Gemma2-2B-IT_multi-prefill-seq_q8_ekv1280.task",
         licenseUrl = "https://huggingface.co/litert-community/Gemma2-2B-IT",
         needsAuth = true,

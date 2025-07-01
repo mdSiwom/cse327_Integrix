@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.mediapipe.examples.llminference.ui.theme.LLMInferenceTheme
+import androidx.compose.foundation.lazy.itemsIndexed
 
 
 @Composable
@@ -30,7 +31,7 @@ internal fun SelectionRoute(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 1️⃣ Welcome header
+        // Welcome header
         Text(
             text = "Welcome, $userName!",
             style = MaterialTheme.typography.headlineSmall,
@@ -39,17 +40,16 @@ internal fun SelectionRoute(
                 .padding(vertical = 8.dp)
         )
 
-
-
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 3️⃣ The list of models
+        // Only take the first two models, label them M1 and M2
+        val models = Model.entries.take(2)
         LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize()
+            verticalArrangement   = Arrangement.Center,
+            modifier              = Modifier.fillMaxSize()
         ) {
-            items(Model.entries) { model ->
+            itemsIndexed(models) { index, model ->
                 Button(
                     onClick = {
                         InferenceModel.model = model
@@ -59,7 +59,7 @@ internal fun SelectionRoute(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    Text(model.toString())
+                    Text(text = if (index == 0) "M1" else "M2")
                 }
             }
         }

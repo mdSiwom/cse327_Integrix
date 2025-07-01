@@ -5,76 +5,80 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.max
 
 class ChatViewModel(
     private var inferenceModel: InferenceModel
 ) : ViewModel() {
 
-    private val _uiState: MutableStateFlow<UiState> = MutableStateFlow(inferenceModel.uiState)
-    val uiState: StateFlow<UiState> =_uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(inferenceModel.uiState)
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    private val _tokensRemaining = MutableStateFlow(-1)
-    val tokensRemaining: StateFlow<Int> = _tokensRemaining.asStateFlow()
-
-    private val _textInputEnabled: MutableStateFlow<Boolean> = MutableStateFlow(true)
+    private val _textInputEnabled = MutableStateFlow(true)
     val isTextInputEnabled: StateFlow<Boolean> = _textInputEnabled.asStateFlow()
 
+    /** Swap in a fresh session/model */
     fun resetInferenceModel(newModel: InferenceModel) {
         inferenceModel = newModel
         _uiState.value = inferenceModel.uiState
+        _textInputEnabled.value = true
     }
 
+    /** Send a message and stream back the model’s reply */
     fun sendMessage(userMessage: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.value.addMessage(userMessage, USER_PREFIX)
-            _uiState.value.createLoadingMessage()
-            setInputEnabled(false)
+            // 1) Post user message + loading bubble on Main
+            viewModelScope.launch(Dispatchers.Main) {
+                _uiState.value.addMessage(userMessage, USER_PREFIX)
+                _uiState.value.createLoadingMessage()
+                _textInputEnabled.value = false
+            }
+
             try {
-                val asyncInference =  inferenceModel.generateResponseAsync(userMessage, { partialResult, done ->
-                    _uiState.value.appendMessage(partialResult)
-                    if (done) {
-                        setInputEnabled(true)  // Re-enable text input
-                    } else {
-                        // Reduce current token count (estimate only). sizeInTokens() will be used
-                        // when computation is done
-                        _tokensRemaining.update { max(0, it - 1) }
+                // 2) Fire off the async generation
+                val future: ListenableFuture<String> =
+                    inferenceModel.generateResponseAsync(userMessage) { chunk, done ->
+                        viewModelScope.launch(Dispatchers.Main) {
+                            _uiState.value.appendMessage(chunk)
+                            if (done) {
+                                _textInputEnabled.value = true
+                            }
+                        }
                     }
-                })
-                // Once the inference is done, recompute the remaining size in tokens
-                asyncInference.addListener({
-                    viewModelScope.launch(Dispatchers.IO) {
-                        recomputeSizeInTokens(userMessage)
-                    }
+
+                // 3) When fully complete, nothing extra to do
+                future.addListener({
+                    /* no‑op */
                 }, Dispatchers.Main.asExecutor())
+
             } catch (e: Exception) {
-                _uiState.value.addMessage(e.localizedMessage ?: "Unknown Error", MODEL_PREFIX)
-                setInputEnabled(true)
+                // 4) If something goes wrong, show error
+                viewModelScope.launch(Dispatchers.Main) {
+                    _uiState.value.addMessage(
+                        e.localizedMessage ?: "Unknown error",
+                        MODEL_PREFIX
+                    )
+                    _textInputEnabled.value = true
+                }
             }
         }
     }
 
-    private fun setInputEnabled(isEnabled: Boolean) {
-        _textInputEnabled.value = isEnabled
-    }
-
-    fun recomputeSizeInTokens(message: String) {
-        val remainingTokens = inferenceModel.estimateTokensRemaining(message)
-        _tokensRemaining.value = remainingTokens
-    }
-
     companion object {
         fun getFactory(context: Context) = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                val inferenceModel = InferenceModel.getInstance(context)
-                return ChatViewModel(inferenceModel) as T
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>,
+                extras: CreationExtras
+            ): T {
+                val model = InferenceModel.getInstance(context)
+                @Suppress("UNCHECKED_CAST")
+                return ChatViewModel(model) as T
             }
         }
     }

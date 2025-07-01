@@ -87,6 +87,8 @@ dependencies {
 
     // Mediapipe GenAI
     implementation("com.google.mediapipe:tasks-genai:0.10.25")
+    implementation("com.google.mediapipe:tasks-vision-imageclassifier:0.10.25")
+    implementation("com.google.mediapipe:tasks-genai-image:0.10.25")
 
     // Networking & security
     implementation("com.squareup.okhttp3:okhttp:4.9.3")

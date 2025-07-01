@@ -1,33 +1,66 @@
 package com.google.mediapipe.examples.llminference
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxSize
+
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.mediapipe.examples.llminference.ui.theme.LLMInferenceTheme
+
 
 @Composable
 internal fun SelectionRoute(
+    userName: String,
     onModelSelected: () -> Unit = {},
+    onLogout:        () -> Unit = {}
 ) {
-    LazyColumn(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+    Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(16.dp)
     ) {
-        items(Model.entries) { model ->
-            Button(
-                onClick = {
-                    InferenceModel.model = model
-                    onModelSelected()
-                },
-            ) {
-                Text(model.toString())
+        // 1️⃣ Welcome header
+        Text(
+            text = "Welcome, $userName!",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        )
+
+
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 3️⃣ The list of models
+        LazyColumn(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(Model.entries) { model ->
+                Button(
+                    onClick = {
+                        InferenceModel.model = model
+                        onModelSelected()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    Text(model.toString())
+                }
             }
         }
     }

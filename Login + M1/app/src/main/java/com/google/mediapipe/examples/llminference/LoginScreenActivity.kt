@@ -85,13 +85,20 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
     }
 
     fun launchGoogle() {
+        // build your client as before
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(context.getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
         val client = GoogleSignIn.getClient(context, gso)
-        googleLauncher.launch(client.signInIntent)
+
+        // 1️⃣ Sign out first (clears the remembered account)
+        client.signOut().addOnCompleteListener {
+            // 2️⃣ Then launch the chooser
+            googleLauncher.launch(client.signInIntent)
+        }
     }
+
 
     Column(
         modifier = Modifier
@@ -100,7 +107,7 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = if (isSignUp) "Create Account" else "Welcome Back",
+            text = if (isSignUp) "Create Account" else "Welcome to Integrix",
             style = MaterialTheme.typography.headlineSmall
         )
         Spacer(Modifier.height(16.dp))
